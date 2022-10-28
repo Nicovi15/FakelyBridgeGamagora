@@ -16,9 +16,9 @@ public class AccStatic : Accroche
         
     }
 
-    private void OnMouseEnter()
+    public override void deletePoutre(Poutre p)
     {
-        Debug.Log("Hey Enter Static");
+        poutres.Remove(p);
     }
 
 }

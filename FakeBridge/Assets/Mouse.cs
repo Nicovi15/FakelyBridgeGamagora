@@ -6,7 +6,8 @@ public enum MouseState
 {
     construct = 0,
     move = 1,
-    destroy = 2
+    destroy = 2,
+    play = 3
 }
 
 public class Mouse : MonoBehaviour
@@ -53,7 +54,12 @@ public class Mouse : MonoBehaviour
             {
                 poutreTemp.GetComponent<Poutre>().updatePoutreTemp();
 
-                if (Input.GetMouseButtonUp(0))
+                if (Input.GetMouseButtonDown(1))
+                {
+                    Destroy(poutreTemp);
+                    isConstructing = false;
+                }
+                else if (Input.GetMouseButtonUp(0))
                 {
                     RaycastHit2D hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
                     Accroche accB;
@@ -69,7 +75,26 @@ public class Mouse : MonoBehaviour
                         accB = newAcc.GetComponent<Accroche>();
                     }
 
-                    poutreTemp.GetComponent<Poutre>().initPoutre(accB);
+                    if(accB == poutreTemp.GetComponent<Poutre>().accA)
+                        Destroy(poutreTemp);
+                    else
+                    {
+                        bool valid = true;
+                        foreach(Poutre p in accB.poutres)
+                        {
+                            if ((p.accA == poutreTemp.GetComponent<Poutre>().accA  && p.accB == accB) || 
+                                (p.accA == accB && p.accB == poutreTemp.GetComponent<Poutre>().accA))
+                            {
+                                Destroy(poutreTemp);
+                                valid = false;
+                                break;
+                            }
+                        }
+                        if(valid)
+                            poutreTemp.GetComponent<Poutre>().initPoutre(accB);
+                    }
+                        
+
                     isConstructing = false;
                 }
 
@@ -78,13 +103,32 @@ public class Mouse : MonoBehaviour
             {
                 RaycastHit2D hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
 
-                if (hit && hit.collider.CompareTag("Accroche"))
+                if (hit)
                 {
-                    Debug.Log("Accroche");
-                    poutreTemp = Instantiate(prefabPoutre);
-                    poutreTemp.GetComponent<Poutre>().accA = hit.collider.GetComponent<Accroche>();
-                    poutreTemp.GetComponent<Poutre>().updatePoutreTemp();
-                    isConstructing = true;
+                    if (hit.collider.CompareTag("Accroche"))
+                    {
+                        poutreTemp = Instantiate(prefabPoutre);
+                        poutreTemp.GetComponent<Poutre>().accA = hit.collider.GetComponent<Accroche>();
+                        poutreTemp.GetComponent<Poutre>().updatePoutreTemp();
+                        isConstructing = true;
+                    }
+                    else if (hit.collider.CompareTag("Poutre"))
+                    {
+                        Poutre currentPoutre = hit.collider.GetComponent<Poutre>();
+                        GameObject newAcc = Instantiate(prefabAccMov);
+                        Vector3 newPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                        newPos.z = 0;
+                        newAcc.transform.position = newPos;
+
+                        GameObject poutreA = Instantiate(prefabPoutre);
+                        poutreA.GetComponent<Poutre>().initPoutre(currentPoutre.accA, newAcc.GetComponent<AccMovable>());
+
+                        GameObject poutreB = Instantiate(prefabPoutre);
+                        poutreB.GetComponent<Poutre>().initPoutre(currentPoutre.accB, newAcc.GetComponent<AccMovable>());
+
+                        currentPoutre.delete();
+                    }
+                    
                 }
             }
             

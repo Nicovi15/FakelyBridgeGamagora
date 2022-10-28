@@ -16,11 +16,6 @@ public class AccMovable : Accroche
         
     }
 
-    private void OnMouseEnter()
-    {
-        //Debug.Log("Hey Enter Movable");
-    }
-
     protected override void moveAcc()
     {
         Vector3 oldPos = transform.position;
@@ -30,6 +25,12 @@ public class AccMovable : Accroche
 
         foreach (Poutre p in poutres)
             p.updateVisu();
+    }
+
+    private void OnMouseDown()
+    {
+        if(mouse.state == MouseState.destroy)
+            deleteAcc();
     }
 
 }
