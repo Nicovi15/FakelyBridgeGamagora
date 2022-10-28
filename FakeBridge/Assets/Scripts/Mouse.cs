@@ -12,6 +12,9 @@ public enum MouseState
 
 public class Mouse : MonoBehaviour
 {
+    [SerializeField]
+    GameManager GM;
+
     [Header("Cursor state")]
     public MouseState state;
 
@@ -27,6 +30,9 @@ public class Mouse : MonoBehaviour
 
     [SerializeField]
     GameObject trashCursor;
+
+    [SerializeField]
+    GameObject playCursor;
 
     bool isConstructing;
     GameObject poutreTemp;
@@ -48,6 +54,24 @@ public class Mouse : MonoBehaviour
     {
         mouseCursor.transform.position = Input.mousePosition;
 
+        if (!GM.constructPhase)
+        {
+            return;
+        }
+
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+            setState(0);
+        if (Input.GetKeyDown(KeyCode.Alpha2))
+            setState(1);
+        if (Input.GetKeyDown(KeyCode.Alpha3))
+            setState(2);
+        if (Input.GetKeyDown(KeyCode.Return))
+        {
+            GM.setPlayMode();
+            return;
+        }
+            
+
         if (state == MouseState.construct)
         {
             if (isConstructing)
@@ -64,8 +88,28 @@ public class Mouse : MonoBehaviour
                     RaycastHit2D hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
                     Accroche accB;
 
-                    if (hit && hit.collider.CompareTag("Accroche"))
-                       accB = hit.collider.GetComponent<Accroche>();
+                    if (hit)
+                    {
+                        if(hit.collider.CompareTag("Accroche"))
+                            accB = hit.collider.GetComponent<Accroche>();
+                        else /*if (hit.collider.CompareTag("Poutre"))*/
+                        {
+                            Poutre currentPoutre = hit.collider.GetComponent<Poutre>();
+                            GameObject newAcc = Instantiate(prefabAccMov);
+                            Vector3 newPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                            newPos.z = 0;
+                            newAcc.transform.position = newPos;
+
+                            GameObject poutreA = Instantiate(prefabPoutre);
+                            poutreA.GetComponent<Poutre>().initPoutre(currentPoutre.accA, newAcc.GetComponent<AccMovable>());
+
+                            GameObject poutreB = Instantiate(prefabPoutre);
+                            poutreB.GetComponent<Poutre>().initPoutre(currentPoutre.accB, newAcc.GetComponent<AccMovable>());
+
+                            currentPoutre.delete();
+                            accB = newAcc.GetComponent<Accroche>();
+                        }
+                    }
                     else
                     {
                         GameObject newAcc = Instantiate(prefabAccMov);
@@ -140,6 +184,7 @@ public class Mouse : MonoBehaviour
         hammerCursor.SetActive(false);
         handCursor.SetActive(false);
         trashCursor.SetActive(false);
+        playCursor.SetActive(false);
 
         switch (newState)
         {
@@ -156,6 +201,11 @@ public class Mouse : MonoBehaviour
             case 2:
                 state = MouseState.destroy;
                 trashCursor.SetActive(true);
+                break;
+
+            case 3:
+                state = MouseState.play;
+                playCursor.SetActive(true);
                 break;
 
             default:

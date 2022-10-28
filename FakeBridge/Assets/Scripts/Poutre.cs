@@ -132,8 +132,10 @@ public class Poutre : MonoBehaviour
     public void delete()
     {
         accA.deletePoutre(this);
-        accB.deletePoutre(this);
-        Destroy(this.gameObject);
+        if(accB)
+            accB.deletePoutre(this);
+        if(this.gameObject)
+            Destroy(this.gameObject);
         GameObject.Find("GameManager").GetComponent<GameManager>().poutres.Remove(this);
     }
 
