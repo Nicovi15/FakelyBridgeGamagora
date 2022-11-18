@@ -5,17 +5,26 @@ using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
+    [Header("Scene Objects")]
+    public List<Accroche> accs = new List<Accroche>();
+    public List<Poutre> poutres = new List<Poutre>();
+
+    [Header("Physics Settings")]
+    public int coefDt;
+    public float gravity;
+
+    [Header("Input")]
     [SerializeField]
     Mouse mouse;
 
+    [Header("Canvas")]
     [SerializeField]
     GameObject canvasConstruct;
 
     [SerializeField]
     GameObject canvasPlay;
 
-    public List<Accroche> accs = new List<Accroche>();
-    public List<Poutre> poutres = new List<Poutre>();
+    
 
     public bool constructPhase = true;
 
@@ -37,7 +46,26 @@ public class GameManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        if (constructPhase)
+            return;
+
+        float dT = Time.deltaTime / ((float)coefDt);
+
+        for (int i = 0; i < coefDt; i++)
+        {
+            // Calcul de l'acceleration
+            foreach (Accroche a in accs)
+                a.AccUpdate(a.mass * gravity * Vector3.down);
+
+            // Mis a jour de la vitesse et de la position
+            foreach (Accroche a in accs)
+                a.updatePhysics(dT);
+
+            // Suppression des poutres non valides
+            for (int p = poutres.Count - 1; p >= 0; p--)
+                if (!poutres[p].isValid)
+                    poutres[p].delete();
+        }
     }
 
     public void addAcc(Accroche a)
@@ -61,8 +89,10 @@ public class GameManager : MonoBehaviour
 
         for (int i = poutres.Count - 1; i >= 0; i--)
         {
-            if(!poutres[i].isValid)
+            if (!poutres[i].isValid)
                 poutres[i].delete();
+            else
+                poutres[i].saveDefaultSize();
         }
     }
 

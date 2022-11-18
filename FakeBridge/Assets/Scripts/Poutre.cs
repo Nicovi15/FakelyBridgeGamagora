@@ -6,22 +6,31 @@ using UnityEngine;
 [RequireComponent(typeof(PolygonCollider2D))]
 public class Poutre : MonoBehaviour
 {
-    public Accroche accA, accB;
-    public float maxSize;
 
+    [Header("Physics settings")]
+    public float maxSize;
+    public float defaultSize;
+    public float coefK;
+
+    [Header("Accroche settings")]
     [SerializeField]
     GameObject poutrePrefab;
     [SerializeField]
     GameObject accMovePrefab;
+    public Accroche accA, accB;
 
+    [Header("Display settings")]
     public Gradient validColor;
     public Gradient validColorHighlight;
     public Gradient nonValidColor;
     public Gradient nonValidColorHighlight;
+    public Gradient playModeTint;
+
 
     public bool isValid = false;
     public bool isHighlighted = false;
 
+    bool constructPhase = false;
     LineRenderer LR;
     PolygonCollider2D collid;
 
@@ -83,20 +92,28 @@ public class Poutre : MonoBehaviour
 
     void updateColor()
     {
-        if (isHighlighted)
+        if (constructPhase)
         {
-            if(isValid)
-                LR.colorGradient = validColorHighlight;
-            else
-                LR.colorGradient = nonValidColorHighlight;
+            LR.material.color = Color.HSVToRGB(0.5f - (getSize() / maxSize) * 0.5f, 1.0f, 1.0f);
         }
         else
         {
-            if (isValid)
-                LR.colorGradient = validColor;
+            if (isHighlighted)
+            {
+                if (isValid)
+                    LR.colorGradient = validColorHighlight;
+                else
+                    LR.colorGradient = nonValidColorHighlight;
+            }
             else
-                LR.colorGradient = nonValidColor;
+            {
+                if (isValid)
+                    LR.colorGradient = validColor;
+                else
+                    LR.colorGradient = nonValidColor;
+            }
         }
+        
     }
 
     public float getSize()
@@ -131,12 +148,13 @@ public class Poutre : MonoBehaviour
 
     public void delete()
     {
+        GameObject.Find("GameManager").GetComponent<GameManager>().poutres.Remove(this);
         accA.deletePoutre(this);
         if(accB)
             accB.deletePoutre(this);
         if(this.gameObject)
             Destroy(this.gameObject);
-        GameObject.Find("GameManager").GetComponent<GameManager>().poutres.Remove(this);
+        
     }
 
     private void OnMouseDown()
@@ -153,5 +171,21 @@ public class Poutre : MonoBehaviour
             default:
                 break;
         }
+    }
+
+    public void saveDefaultSize()
+    {
+        defaultSize = getSize();
+        LR.colorGradient = playModeTint;
+        constructPhase = true;
+    }
+
+    public Vector3 getForce(Accroche a)
+    {
+        float d = coefK * (defaultSize - getSize());
+        if(a == accA)
+            return -(accB.transform.position - accA.transform.position).normalized * d;
+        else
+            return -(accA.transform.position - accB.transform.position).normalized * d;
     }
 }

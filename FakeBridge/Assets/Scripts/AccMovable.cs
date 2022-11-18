@@ -8,6 +8,7 @@ public class AccMovable : Accroche
     new void Start()
     {
         base.Start();
+        GameObject.Find("GameManager").GetComponent<GameManager>().addAcc(this);
     }
 
     // Update is called once per frame

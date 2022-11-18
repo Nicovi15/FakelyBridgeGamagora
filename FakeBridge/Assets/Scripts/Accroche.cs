@@ -4,7 +4,13 @@ using UnityEngine;
 
 public abstract class Accroche : MonoBehaviour
 {
+    [Header("Physics Settings")]
+    public float mass;
+    public Vector3 acceleration;
+    public Vector3 vitesse;
+    public float dissipation;
 
+    [Header("Poutres")]
     public List<Poutre> poutres = new List<Poutre>();
     protected Mouse mouse;
     protected SpriteRenderer SR;
@@ -19,7 +25,7 @@ public abstract class Accroche : MonoBehaviour
     // Start is called before the first frame update
     public void Start()
     {
-        GameObject.Find("GameManager").GetComponent<GameManager>().addAcc(this);
+        //GameObject.Find("GameManager").GetComponent<GameManager>().addAcc(this);
         mouse = GameObject.Find("Mouse").GetComponent<Mouse>();
         SR = GetComponent<SpriteRenderer>();
     }
@@ -61,13 +67,22 @@ public abstract class Accroche : MonoBehaviour
     protected virtual void moveAcc() { }
     protected virtual void destroyAcc() { }
 
+    public virtual void AccUpdate(Vector3 gravity){
+        acceleration = gravity;
+        foreach(Poutre p in poutres)
+            acceleration += p.getForce(this);
+
+        acceleration /= mass;
+    }
+
+
     public virtual void deletePoutre(Poutre p)
     {
         poutres.Remove(p);
         if (poutres.Count <= 0)
         {
-            Destroy(this.gameObject);
             GameObject.Find("GameManager").GetComponent<GameManager>().accs.Remove(this);
+            Destroy(this.gameObject);
         }
             
     }
@@ -85,4 +100,21 @@ public abstract class Accroche : MonoBehaviour
         if (!poutres.Contains(p))
             poutres.Add(p);
     }
+
+    public virtual void updatePhysics()
+    {
+        vitesse += Time.deltaTime * acceleration;
+        transform.position += vitesse * Time.deltaTime;
+        foreach (Poutre p in poutres)
+            p.updateVisu();
+    }
+
+    public virtual void updatePhysics(float dT)
+    {
+        vitesse += dT * acceleration - vitesse * dissipation;
+        transform.position += vitesse * dT;
+        foreach (Poutre p in poutres)
+            p.updateVisu();
+    }
+
 }
